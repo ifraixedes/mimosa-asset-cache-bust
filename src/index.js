@@ -1,13 +1,10 @@
-// Module Interface
-// -----------
+'use strict';
 
-// The code contained herein is all example code and shouldn't be used verbatim.
-// The example in this case is modified from the mimosa-minify module.
-"use strict";
+var util = require('util');
+var signAssetFiles = require('./sign-asset-files');
 
-// Pulling in the <a href="./config.html">configuration management</a> code that is a
-// part of the module.
-var config = require('./config');
+var isArray = util.isArray;
+var isRegExp = util.isRegExp;
 
 // The registration function is the key part of your module.  This function is called
 // during Mimosa's startup and it allows your module to bind to one or many steps
@@ -46,13 +43,12 @@ var config = require('./config');
 // through the module.
 
 var registration = function(mimosaConfig, register) {
-  if (config.isMinify) {
-    var e = mimosaConfig.extensions;
-    var slice = [].slice;
-    register(['add', 'update', 'buildFile'], 'afterCompile', _minifyJS, slice.call(e.javascript));
-    register(['add', 'update', 'buildExtension'], 'beforeWrite', _minifyJS, slice.call(e.template));
+
+  if (isAssetsBusting) {
+    register(['postBuild'], 'beforePackage', signAssetsFiles);
   }
 };
+
 
 // The _minifyJS function here represents your workflow callback function.  This function will be called
 // during the workflow type and step you selected, if the file/extension being processed matches
