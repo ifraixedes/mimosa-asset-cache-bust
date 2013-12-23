@@ -110,7 +110,7 @@ function getSignerFunction(hashAlgorithm) {
       hasher.update(text);
       callback(null, hasher.digest('hex'));
     } catch (e) {
-      callback(new Error('file signature process failed with message: ' e.message));
+      callback(new Error('file signature process failed with message: ' + e.message));
     }
   };
 }

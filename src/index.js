@@ -1,7 +1,8 @@
 'use strict';
 
 var util = require('util');
-var bustAssetFiles = require('./bust-asset-files');
+var config = require('./config');
+var bustAssetFiles = require('./bust-assets-files');
 
 var registration = function(mimosaConfig, register) {
     register(['postBuild'], 'beforePackage', bustAssetsFiles);
