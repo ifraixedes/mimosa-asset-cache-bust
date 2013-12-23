@@ -1,9 +1,12 @@
 'use strict';
 
+var util = require('util');
 var path = require('path');
 var crypto = require('crypto');
 var packageJSON = require('../package.json');
 
+var isArray = util.isArray;
+var isRegExp = util.isRegExp;
 var moduleName = packageJSON.name;
 var mimosaConfigId = packageJSON.config.mimosaConfigId;
 
