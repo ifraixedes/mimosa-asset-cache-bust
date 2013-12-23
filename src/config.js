@@ -1,73 +1,52 @@
-// Module Configuration
-// -----------
+'use strict';
 
-// The code contained herein is all example code and shouldn't be used verbatim.
-// The example in this case is modified from the mimosa-minify module.
+var crypto = require('crypto');
+var packageJSON = require('../package.json');
 
-"use strict";
-
-// The defaults function should return a JSON object containing the default
-// config for your module. If your module has no config, the function can be
-// removed or return null. Mimosa uses this function when applying default
-// configuration to a user's config.
+var mimosaConfigId = packageJSON.config.mimosaConfigId;
 
 exports.defaults = function() {
-  return {
-    minify: {
-      exclude: [/\.min\./]
-    }
+  var configObj = {};
+  
+  configObj = configObj[mimosaConfigId];
+  configObj = {
+    hash: 'md5' 
   };
+ 
+  return configObj;
 };
-
-// The placeholder function should return a string that represents the
-// mimosa-config placeholder for your configuration defaults including
-// explanations for each config setting where appropriate.  The content
-// of the string should be all commented out. If you have no config,
-// the function can be removed or can return null.  This function is called
-// when Mimosa is creating an initial mimosa-config using 'mimosa new' or
-// 'mimosa config'
 
 exports.placeholder = function() {
   return "\t\n\n"+
-         "  # minify:                    # Configuration for non-require minification/compression via uglify\n" +
-         "                               # using the --minify flag.\n" +
-         "    # exclude:[/\\.min\\./]     # List of regexes to exclude files when running minification.\n" +
-         "                               # Any path with \".min.\" in its name, like jquery.min.js, is assumed to\n" +
-         "                               # already be minified and is ignored by default. Override this property\n" +
-         "                               # if you have other files that you'd like to exempt from minification.";
+         "  # " + mimosaConfigId + ":    # Renamed the specified assets files to bust the browser cache\n" +
+         "                               # providing an unique file name when they change, using the \n" + 
+         "                               # --assetsBusting flag.\n" +
+         "    # hash: 'md5'              # String that specify the hash algorithm to use for create file\n" +
+         "                               # signature which will be appended to the asset file name; \n" + 
+         "                               # 'md5' by default \n" +
+         "    # files: [] or / / or ''   # Array with assets file path to bust or a regular expression\n " +
+         "                               # otherwise it will be converted to string and a regular\n" + 
+         "                               # expression will be created; if it isn't specified then\n" + 
+         "                               # no assets files will be busted";
 };
-
-// The validate function takes a config object (which is the entire
-// mimosa-config) and a validators object which contains several useful
-// validation methods. Using custom validation and validation provided
-// via the validators, the validate method should find the module specific
-// config, validate the settings and return a list of strings that are
-// validation error messages. If there are no errors, return an empty
-// array or return nothing.  Mimosa uses this function when Mimosa starts
-// up to ensure the configuration has been set properly.
 
 exports.validate = function(config, validators) {
   var errors = [];
-  if (validators.ifExistsIsObject(errors, "minify config", config.minify)) {
-    if (validators.ifExistsIsArray(errors, "minify.exclude", config.minify.exclude)) {
-      var exls = config.minify.exclude;
-      for (var _i = 0, _len = exls.length; _i < _len; _i++) {
-        var ex = exls[_i];
-        if (typeof ex !== "string") {
-          errors.push("minify.exclude must be an array of strings");
-          break;
-        }
+  var moduleConfig = config[mimosaConfigId];
+
+  if (validators.ifExistsIsObject(errors, mimosaConfigId + ' config', moduleConfig)) {
+    if (validators.ifExistIsString(errors, mimosaConfigId + '.hash', moduleConfig.hash)) {
+      try {
+      // Allows to check hash algorithm is supported
+      crypto.createHash(hashAlgorithm);
+      } catch (e) {
+        errors.push(mimosaConfigId + '.hash must specify a hash algorithm supported by NodeJS crypto module');
       }
     }
   }
 
-  // The validate function is also an opportunity to do configuration massaging,
-  // for instance, turning a list of strings into a single RegExp.  Changes
-  // made to the config inside validate are permament and carried throughout
-  // the currently running Mimosa process.
-
-  if (errors.length === 0 && config.minify.exclude && config.minify.exclude.length > 0) {
-    config.minify.exclude = new RegExp(config.minify.exclude.join("|"), "i");
+  if ((errors.length === 0) && (moduleConfig) && (!moduleConfig.hash)) {
+    moduleConfig.hash = 'md5';
   }
 
   return errors;

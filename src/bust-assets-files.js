@@ -103,9 +103,6 @@ function getSignedFileName(fileFullName, signature) {
 }
 
 function getSignerFunction(hashAlgorithm) {
-  // Allows to check hash algorithm is supported
-  crypto.createHash(hashAlgorithm);
-  
   return function (text, callback) {
     var hasher = crypto.createHash(hashAlgorithm);
 
