@@ -10,7 +10,8 @@ exports.defaults = function() {
   
   configObj = configObj[mimosaConfigId];
   configObj = {
-    hash: 'md5' 
+    hash: 'md5',
+    files: []
   };
  
   return configObj;
@@ -19,15 +20,20 @@ exports.defaults = function() {
 exports.placeholder = function() {
   return "\t\n\n"+
          "  # " + mimosaConfigId + ":    # Renamed the specified assets files to bust the browser cache\n" +
-         "                               # providing an unique file name when they change, using the \n" + 
+         "                               # providing an unique file name when they change, using the\n" + 
          "                               # --assetsBusting flag.\n" +
          "    # hash: 'md5'              # String that specify the hash algorithm to use for create file\n" +
-         "                               # signature which will be appended to the asset file name; \n" + 
-         "                               # 'md5' by default \n" +
-         "    # files: [] or / / or ''   # Array with assets file path to bust or a regular expression\n " +
-         "                               # otherwise it will be converted to string and a regular\n" + 
-         "                               # expression will be created; if it isn't specified then\n" + 
-         "                               # no assets files will be busted";
+         "                               # signature which will be appended to the asset file name;\n" + 
+         "                               # 'md5' by default\n" +
+         "    # files: []                # Array with assets file path to bust. Each element must be a\n " +
+         "                               # string which must one of the next values:\n" + 
+         "                               #  - A full path to a file name\n" + 
+         "                               #  - A full path to a directory; it must end with the path\n"
+         "                               #    separartor character\n" 
+         "                               #  - A full path to a directory followed with a pattern to match\n"
+         "                               #    file names into it; so the pattern string must be a string\n"
+         "                               #    which the right syntax to build a RegExp object\n"
+         "                               # Note: A full path means a path which is resolved from mimosa app";
 };
 
 exports.validate = function(config, validators) {
@@ -35,18 +41,14 @@ exports.validate = function(config, validators) {
   var moduleConfig = config[mimosaConfigId];
 
   if (validators.ifExistsIsObject(errors, mimosaConfigId + ' config', moduleConfig)) {
-    if (validators.ifExistIsString(errors, mimosaConfigId + '.hash', moduleConfig.hash)) {
+    if (validators.ifExistsIsString(errors, mimosaConfigId + '.hash', moduleConfig.hash)) {
       try {
-      // Allows to check hash algorithm is supported
-      crypto.createHash(hashAlgorithm);
+        // to check hash algorithm is supported
+        crypto.createHash(moduleConfig.hash);
       } catch (e) {
         errors.push(mimosaConfigId + '.hash must specify a hash algorithm supported by NodeJS crypto module');
       }
     }
-  }
-
-  if ((errors.length === 0) && (moduleConfig) && (!moduleConfig.hash)) {
-    moduleConfig.hash = 'md5';
   }
 
   return errors;

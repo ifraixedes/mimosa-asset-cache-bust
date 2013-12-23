@@ -2,7 +2,7 @@
 
 var util = require('util');
 var config = require('./config');
-var bustAssetFiles = require('./bust-assets-files');
+var bustAssetsFiles = require('./bust-assets-files');
 
 var registration = function(mimosaConfig, register) {
     register(['postBuild'], 'beforePackage', bustAssetsFiles);
