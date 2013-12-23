@@ -1,50 +1,38 @@
 'use strict';
 
 var path = require('path');
+var crypto = require('crypto');
+var packageJSON = require('../package.json');
 
-function signAssetsFiles(mimosaConfig, options, next) {
-  var assetsToBust = mimosaConfig.assetCacheBust.files;
-  var signer = getSignerFunction(mimosaConfig.assetCacheBust.hash);
-  var processor;
+var moduleName = packageJSON.name;
+var mimosaConfigId = packageJSON.config.mimosaConfigId;
 
-  if (!assetsToBust) {
+function bustAssetsFiles(mimosaConfig, options, next) {
+  var signer = getSignerFunction(mimosaConfig[mimosaConfigId].hash);
+  var filter;
+
+  if (mimosaConfig[mimosaConfigId].files) {
+    filter = getFilterAssetsFiles(mimosaConfig[mimosaConfigId].files);
+  } else {
     next();
     return;
   }
 
-
-  if (isArray(assetsToBust)) {
-    processor = signAssetsWithArrayFilter;
-  } else  {
-    if (!isRegExp(assetsToBust)) {
-      assetsToBust = new RegExp(assetsToBust.toString());
-    } 
-
-    processor = signAssetsWithRegExpFilter;
-  } 
-
-  processor(assetsToBust, options.files, signer, function (err) {
+  renameAssets(options.files, filter, signer, function (err) {
     if (err) {
-      throw new Error('mimosa-asset-cache-bust failed, error details: ' + err.message);
+      throw new Error(moduleName + ' failed, error details: ' + err.message);
     } else {
       next();
     }
   });
 }
 
-function signAssetsWithArrayFilter(filter, assetsFileList, signerFunc, callback) {
-  var renamedAssetsFileNames = [];
+function renameAssets(assetsFileList, filterFunc, signerFunc, callback) {
   var assetsLeft = assetsFileList.length;
 
-  if ((0 === filter.length) || (0 === assetsLeft)) {
-    callback(null, []);
-    return;
-  }
-
   //@TODO check if mimosa file object has the path of the file or just the file name
-
   assetsFileList.forEach(function (fileObj) {
-    if (0 >= filter.indexOf(fileObj.inputFileName)) {
+    if (filterFunc(fileObj.inputFileName)) {
      signerFunc(fileObj.outputFileText, function (err, signature) {
        if (0 === assetsLeft) {
          return;
@@ -57,8 +45,11 @@ function signAssetsWithArrayFilter(filter, assetsFileList, signerFunc, callback)
        }
 
        assetsLeft--;
+       fileObj.outputFileName = getSignedFileName(fileObj.outputFileName, signature);
 
-
+       if (assetsLeft === 0) {
+         callback();
+       }
      });
     } else {
       assetsLeft--;
@@ -66,25 +57,62 @@ function signAssetsWithArrayFilter(filter, assetsFileList, signerFunc, callback)
   });
 }
 
-function signAssetsWithRegExpFilter(filter, assetsFileList, signerFunc, callback) {
+function getFilterAssetsFiles(filterValue) {
+    
+  if (isArray(filterValue)) {
+    return function (fileName) {
+      return (0 >= filterValue.indexOf(fileName)) ? true : false; 
+    }
+
+  } else  {
+    if (!isRegExp(filterValue)) {
+      filterValue = new RegExp(assetsToBust.toString());
+    } 
+
+    return function (fileName) {
+      return filterValue.match(fileName); 
+    }
+  }
 }
 
 function getSignedFileName(fileFullName, signature) {
   var filePath = path.dirname(fileFullName);
-  var fileExt = path.extname(fileFullName);
-  var filename;
+  var extFilenameRegExp = new RegExp('([^.]+)(\\..*)?', 'i');
+  var fileNameParts;
 
-  //if (filePath)
-  //@TODO continue here!!!
+  if ('.' === filePath) {
+    fileNameParts = fileFullName;
+  } else {
+    fileNameParts = fileFullName.substring(fileFullName.lastIndexOf(path.sep) + 1);
+  }
 
-  
+  fileNameParts = extFilenameRegExp.exec(fileNameParts);
+
+  if (null === fileNameParts) {
+    throw new Error('invalid path file name: ' + fileFullName);
+  }
+
+  if (undefined === fileNameParts[2]) {
+    return filePath + path.sep + fileNameParts[1] + '-' + signature;
+  } else {
+    return filePath + path.sep.fileNameParts[1] + '-' + signature + fileNameParts[2];
+  }
 }
 
-function getSignerFunction(hash) {
+function getSignerFunction(hashAlgorithm) {
+  // Allows to check hash algorithm is supported
+  crypto.createHash(hashAlgorithm);
+  
   return function (text, callback) {
-    callback(null, 'aaa');
+    var hasher = crypto.createHash(hashAlgorithm);
+
+    try {
+      hasher.update(text);
+      callback(null, hasher.digest('hex'));
+    } catch (e) {
+      callback(new Error('file signature process failed with message: ' e.message));
+    }
   };
 }
 
-
-module.exports = signAssetsFiles;
+module.exports = bustAssetsFiles;
