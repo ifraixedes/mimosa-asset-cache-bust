@@ -8,8 +8,7 @@ var mimosaConfigId = packageJSON.config.mimosaConfigId;
 exports.defaults = function() {
   var configObj = {};
   
-  configObj = configObj[mimosaConfigId];
-  configObj = {
+  configObj[mimosaConfigId] = {
     hash: 'md5',
     splitter: '-',
     files: []
@@ -58,13 +57,6 @@ exports.validate = function(config, validators) {
     }
   }
 
-  if (0 === errors.length) {
-   for (configKey in defaultConfig) {
-     if (undefined === moduleConfig[configKey]) {
-       moduleConfig[configKey] = defaultConfig[configKey];
-     }
-   }
-  }
 
   return errors;
 };
