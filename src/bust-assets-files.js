@@ -12,10 +12,11 @@ var mimosaConfigId = packageJSON.config.mimosaConfigId;
 var getFilesList = fileSystemTools.getFilesList;
 var getFileNameWithSufix = fileSystemTools.getFileNameWithSufix;
 var getHashDigester = utils.getHashDigester;
+var getHashDigesterInfo = utils.getHashDigesterInfo;
 
 function bustAssetsFiles(mimosaConfig, options, next) {
   var thisModuleConfig = mimosaConfig[mimosaConfigId];
-  var digester = getHashDigester(thisModuleConfig.hash);
+  var digester = getHashDigester(thisModuleConfig.hash, 'hex');
   var filter;
 
   if (!thisModuleConfig.files) {
@@ -32,7 +33,7 @@ function bustAssetsFiles(mimosaConfig, options, next) {
       if (err) {
         throw new Error(moduleName + ' failed, error details: ' + err.message);
       } 
-    
+
       next();
     });
   });
@@ -62,13 +63,13 @@ function renameAssets(assetsFileList, digesterFunc, splitter, callback) {
           if (0 === assetsLeft) {
             return;
           }
-        
+
           if (err) {
             assetsLeft = 0;
             callback(new Error('Error when renaming ' + fileRefObj.dir + path.sep + fileRefObj.fileName + ' to ' + fileRefObj.dir + path.sep + outputFileName));
             return;
           }
-          
+
           assetsLeft--;
           if (0 === assetsLeft) {
             callback(null);
