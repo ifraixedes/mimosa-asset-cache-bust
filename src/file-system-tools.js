@@ -3,10 +3,22 @@
 var path = require('path');
 var fs = require('fs');
 
-function getFilesList(filePaths, callback) {
+/**
+ *
+ */
+function getFilesList(filePaths, basePath, callback) {
   var completeFilesList = [];
   var pushAll = completeFilesList.push;
   var nAsyncCalls = 0;
+
+  if (basePath instanceof Function) {
+    callback = basePath;
+    basePath = '';
+  } else {
+    if (basePath[basePath.length -1] !== path.sep) {
+      basePath += path.sep;
+    }
+  }
 
   if (0 === filePaths.length) {
     callback(null, null);
@@ -19,9 +31,9 @@ function getFilesList(filePaths, callback) {
     var dir;
 
     if (idx + 1 === pathFile.length) {
-      dir = path.normalize('./' + pathFile);
+      dir = path.normalize(basePath + pathFile);
     } else {
-      dir = path.normalize('./' + pathFile.substring(0, idx));
+      dir = path.normalize(basePath + pathFile.substring(0, idx));
       patternFileName = new RegExp(pathFile.substring(idx + 1, pathFile.length));
     }
 
@@ -52,13 +64,15 @@ function getFilesListInDirectory(dirPath, patternFileName, callback) {
   dirPath = path.normalize(dirPath + path.sep);
 
   fs.readdir(dirPath, function(err, filesList) {
-    var nAsyncCalls = filesList.length;
+    var nAsyncCalls; 
     var onlyFilesList = [];
 
     if (err) {
       callback(err);
       return;
     }
+    
+    nAsyncCalls = filesList.length;
 
     filesList.forEach(function (fileName) {
       if ((null === patternFileName) || (patternFileName.test(fileName))) {

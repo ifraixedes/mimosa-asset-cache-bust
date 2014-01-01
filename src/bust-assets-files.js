@@ -14,17 +14,16 @@ var getFileNameWithSufix = fileSystemTools.getFileNameWithSufix;
 var getHashDigester = utils.getHashDigester;
 var getHashDigesterInfo = utils.getHashDigesterInfo;
 
-function bustAssetsFiles(mimosaConfig, options, next) {
+function bustAssetsFiles(mimosaConfig) {
   var thisModuleConfig = mimosaConfig[mimosaConfigId];
   var digester = getHashDigester(thisModuleConfig.hash, 'hex');
   var filter;
 
   if (!thisModuleConfig.files) {
-    next();
     return;
   } 
-
-  getFilesList(thisModuleConfig.files, function (err, assetsFilesList) {
+  
+  getFilesList(thisModuleConfig.files, mimosaConfig.watch.compiledDir, function (err, assetsFilesList) {
     if (err) {
       throw new Error(moduleName + ' failed, error details: ' + err.message);
     }
@@ -33,8 +32,6 @@ function bustAssetsFiles(mimosaConfig, options, next) {
       if (err) {
         throw new Error(moduleName + ' failed, error details: ' + err.message);
       } 
-
-      next();
     });
   });
 }
