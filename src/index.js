@@ -2,31 +2,29 @@
 
 var util = require('util');
 var config = require('./config');
-var bustAssetsFiles = require('./bust-assets-files');
+var bustAssets = require('./bust-assets');
+
+var bustAllAssets = bustAssets.bustAllAssets;
+var bustAsset = bustAssets.bustAsset;
 
 function registration(mimosaConfig, register) {
-    register(['add', 'update', 'remove'], 'complete', function (mimosaConfig, workflowInfo, next) {
-      console.log(workflowInfo);
-      next();
-    });
+  
+   //register(['update'], 'beforeWrite', function (mimosaConfig, workflowInfo, next) {
+   //  console.log(workflowInfo);
+   //});
 
-    register(['buildFile'], 'beforeWrite', function (mimosaConfig, workflowInfo, next) {
-     // console.log(mimosaConfig.watch);
-     //console.log(mimosaConfig);
-      next();
-    });
 
-    register(['postBuild'], 'init', function (mimosaConfig, workflowInfo, next) {
-      //console.log('The arguments in afterOptimize are: ', arguments);
-      next();
+    register(['add', 'update', 'buildFile', 'buildExtension'], 'beforeWrite', function (mimosaConfig, workflowInfo, next) {
+        bustAsset(mimosaConfig, workflowInfo, next);
     });
+    
 
-    register(['cleanFile'], 'delete', function (mimosaConfig, workflowInfo, next) {
-      //console.log(workflowInfo.files);
-      next();
-    });
+//    register(['cleanFile'], 'afterRead', function (mimosaConfig, workflowInfo, next) {
+//      console.log(workflowInfo);
+//      next();
+//    });
 
-    //register(['postBuild'], 'beforePackage', bustAssetsFiles);
+    //register(['postBuild'], 'beforePackage', bustAllAssets);
 }
 
 
@@ -49,7 +47,7 @@ function registerCommand(program, retrieveConfig) {
     .description('Renamed all the assets which match with the rules specified in the module configuration from the compiled directory')
     .action(function() {
       retrieveConfig(true, function(config) {
-        bustAssetsFiles(config, {}, function () {});
+        bustAllAssets(config);
       }); 
     }); 
 }

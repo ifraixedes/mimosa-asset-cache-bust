@@ -4,7 +4,19 @@ var path = require('path');
 var fs = require('fs');
 
 /**
+ * Return a list of references to a files found in the specified file paths, directories and
+ * file name patterns.
  *
+ * @param {Array} filesPaths Array of string with the files paths to a file or file pattern
+ *      (path ended with string regular expression to match the file name) or ended with the
+ *      path separator character to specify all the files from a directory.
+ * @param {String} [basePath] The path used as root directory where the paths specified in the
+ *      filesPaths parameter are referencing. If it isn't provided then empty string is used, so
+ *      the files paths should contain absolute directories or relative to the directory 
+ *      ```process.pwd()``` as node ```fs``` module does.
+ * @param {Function} callback Node convention callback function with a list of object reference 
+ *      files found in the specified paths. Each object has two attributes ```dir```, with the
+ *      directory path, and ```fileName```.
  */
 function getFilesList(filePaths, basePath, callback) {
   var completeFilesList = [];
@@ -27,19 +39,19 @@ function getFilesList(filePaths, basePath, callback) {
 
   filePaths.forEach(function (pathFile) {
     var idx = pathFile.lastIndexOf(path.sep);
-    var patternFileName = null;
+    var fileNamePattern = null;
     var dir;
 
     if (idx + 1 === pathFile.length) {
       dir = path.normalize(basePath + pathFile);
     } else {
       dir = path.normalize(basePath + pathFile.substring(0, idx));
-      patternFileName = new RegExp(pathFile.substring(idx + 1, pathFile.length));
+      fileNamePattern = new RegExp(pathFile.substring(idx + 1, pathFile.length));
     }
 
     nAsyncCalls++;
 
-    getFilesListInDirectory(dir, patternFileName, function (err, filesList) {
+    getFilesListInDirectory(dir, fileNamePattern, function (err, filesList) {
       if (nAsyncCalls < 0) {
         return;
       }
@@ -60,7 +72,7 @@ function getFilesList(filePaths, basePath, callback) {
   });
 }
 
-function getFilesListInDirectory(dirPath, patternFileName, callback) {
+function getFilesListInDirectory(dirPath, fileNamePattern, callback) {
   dirPath = path.normalize(dirPath + path.sep);
 
   fs.readdir(dirPath, function(err, filesList) {
@@ -75,7 +87,7 @@ function getFilesListInDirectory(dirPath, patternFileName, callback) {
     nAsyncCalls = filesList.length;
 
     filesList.forEach(function (fileName) {
-      if ((null === patternFileName) || (patternFileName.test(fileName))) {
+      if ((null === fileNamePattern) || (fileNamePattern.test(fileName))) {
         fs.lstat(dirPath + fileName, function (err, stats) {
           if (nAsyncCalls < 0) {
             return;
@@ -112,6 +124,27 @@ function getFilesListInDirectory(dirPath, patternFileName, callback) {
   });
 }
 
+function getPathsFileNamePatterns(filePaths) {
+  var pathFileNamePatterns = [];
+
+  filePaths.forEach(function (pathFile) {
+    var idx = pathFile.lastIndexOf(path.sep);
+    var fileNamePattern = null;
+    var dir = pathFile.substr(0, idx + 1);
+
+    if (idx + 1 < pathFile.length) {
+      fileNamePattern = new RegExp(pathFile.substring(idx + 1, pathFile.length));
+    }
+    
+    pathFileNamePatterns.push({
+      dir: dir,
+      fileNamePattern: fileNamePattern
+    });
+  });
+
+  return pathFileNamePatterns;
+}
+
 function getFileNameWithSufix(fileName, sufix) {
   var extFilenameRegExp = new RegExp('([^.]+)(\\..*)?', 'i');
   var fileNameParts;
@@ -131,5 +164,6 @@ function getFileNameWithSufix(fileName, sufix) {
 
 module.exports = {
   getFilesList: getFilesList,
+  getPathsFileNamePatterns: getPathsFileNamePatterns, 
   getFileNameWithSufix: getFileNameWithSufix
 };
