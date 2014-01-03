@@ -21,7 +21,8 @@
     "asset"
   ],
   "dependencies": {
-    "logmimosa": "0.6.0"
+    "logmimosa": "0.6.0",
+    "lodash": "~2.4.1"
   },
   "license": "MIT",
   "engines": {
