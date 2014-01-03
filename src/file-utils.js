@@ -145,6 +145,23 @@ function getPathsFileNamePatterns(filePaths) {
   return pathFileNamePatterns;
 }
 
+function tearPathFileName(fullPathFileName) {
+  var parts = {
+    path: path.dirname(fullPathFileName),
+    ext: path.extname(fullPathFileName)
+  };
+
+  if ('' === parts.ext) {
+    parts.name = path.basename(fullPathFileName);
+  } else {
+    parts.name = path.basename(fullPathFileName);
+    parts.name = parts.name.substring(0, parts.name.indexOf(parts.ext));
+    parts.ext = parts.ext.substr(1);
+  }
+
+  return parts; 
+}
+
 function getFileNameWithSufix(fileName, sufix) {
   var extFilenameRegExp = new RegExp('([^.]+)(\\..*)?', 'i');
   var fileNameParts;
@@ -165,5 +182,7 @@ function getFileNameWithSufix(fileName, sufix) {
 module.exports = {
   getFilesList: getFilesList,
   getPathsFileNamePatterns: getPathsFileNamePatterns, 
+  getFilesListInDirectory: getFilesListInDirectory,
+  tearPathFileName: tearPathFileName,
   getFileNameWithSufix: getFileNameWithSufix
 };

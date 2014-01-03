@@ -6,6 +6,8 @@ var bustAssets = require('./bust-assets');
 
 var bustAllAssets = bustAssets.bustAllAssets;
 var bustAsset = bustAssets.bustAsset;
+var removeBustedAsset = bustAssets.removeBustedAsset;
+
 
 function registration(mimosaConfig, register) {
   
@@ -13,16 +15,28 @@ function registration(mimosaConfig, register) {
    //  console.log(workflowInfo);
    //});
 
-
-    register(['add', 'update', 'buildFile', 'buildExtension'], 'beforeWrite', function (mimosaConfig, workflowInfo, next) {
+    
+    register(['add', 'buildFile', 'buildExtension'], 'beforeWrite', function (mimosaConfig, workflowInfo, next) {
         bustAsset(mimosaConfig, workflowInfo, next);
     });
     
+    register(['update'], 'complete', function (mimosaConfig, workflowInfo, next) {
+      console.log(workflowInfo);
+      console.log('watch update!!');
+      next();
+    });
 
-//    register(['cleanFile'], 'afterRead', function (mimosaConfig, workflowInfo, next) {
-//      console.log(workflowInfo);
-//      next();
-//    });
+    register(['remove'], 'afterDelete', function (mimosaConfig, workflowInfo, next) {
+      //removeBustedAsset(mimosaConfig, workflowInfo, next);
+      bustAssets.performActionIfMatch(mimosaConfig, workflowInfo, bustAssets.removeBustedAssetFromMatch, next);
+      
+    });
+    
+
+    register(['cleanFile'], 'beforeDelete', function (mimosaConfig, workflowInfo, next) {
+      console.log(workflowInfo);
+      next();
+    });
 
     //register(['postBuild'], 'beforePackage', bustAllAssets);
 }
@@ -47,7 +61,7 @@ function registerCommand(program, retrieveConfig) {
     .description('Renamed all the assets which match with the rules specified in the module configuration from the compiled directory')
     .action(function() {
       retrieveConfig(true, function(config) {
-        bustAllAssets(config);
+        //bustAllAssets(config);
       }); 
     }); 
 }
