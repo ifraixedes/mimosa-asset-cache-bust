@@ -151,11 +151,15 @@ function tearPathFileName(fullPathFileName) {
     ext: path.extname(fullPathFileName)
   };
 
+  if (('.' === parts.path) && (0 !== fullPathFileName[0])) {
+    parts.path = '';
+  }
+
   if ('' === parts.ext) {
     parts.name = path.basename(fullPathFileName);
   } else {
     parts.name = path.basename(fullPathFileName);
-    parts.name = parts.name.substring(0, parts.name.indexOf(parts.ext));
+    parts.name = parts.name.substring(0, parts.name.lastIndexOf(parts.ext));
     parts.ext = parts.ext.substr(1);
   }
 
@@ -163,20 +167,20 @@ function tearPathFileName(fullPathFileName) {
 }
 
 function getFileNameWithSufix(fileName, sufix) {
-  var extFilenameRegExp = new RegExp('([^.]+)(\\..*)?', 'i');
-  var fileNameParts;
+  var fileNameParts = tearPathFileName(fileName);
+  var newName;
 
-  fileNameParts = extFilenameRegExp.exec(fileName);
-
-  if (null === fileNameParts) {
-    throw new Error('invalid path file name: ' + fileName);
-  }
-
-  if (undefined === fileNameParts[2]) {
-    return fileNameParts[1] + sufix;
+  if ('' === fileNameParts.path) {
+    newName =  fileNameParts.name +  sufix; 
   } else {
-    return fileNameParts[1] + sufix + fileNameParts[2];
+    newName = fileNameParts.path + path.sep + fileNameParts.name +  sufix; 
   }
+
+  if ('' !== fileNameParts.ext) {
+    newName += '.' + fileNameParts.ext;
+  }
+
+  return newName;
 }
 
 module.exports = {

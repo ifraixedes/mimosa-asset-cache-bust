@@ -95,51 +95,6 @@ function renameAssets(assetsFileList, digesterFunc, splitter, callback) {
   });
 }
 
-function bustAsset(mimosaConfig, workflowInfo, next) {
-  var thisModuleConfig = mimosaConfig[mimosaConfigId];
-  var destFolder = mimosaConfig.watch.compiledDir;
-  
-  if (workflowInfo.files && ('string' === typeof destFolder)) {
-    getBustAssetResources(thisModuleConfig, function (err, bustAssetResources) {
-      workflowInfo.files.forEach(function (fileObj) {
-        var it;
-        var subPath;
-        var fileName;
-        var matchedPath;
-        var outputFileName = fileObj.outputFileName;
-
-        if (outputFileName) {
-          subPath = outputFileName.substring(outputFileName.indexOf(destFolder) + destFolder.length + 1);
-          fileName = path.basename(subPath);
-          subPath = subPath.substr(0, subPath.length - fileName.length);
-          matchedPath = bustAssetResources.indexedPathsFileNamePatterns[subPath];
-
-          if (undefined !== matchedPath) {
-            for (it = 0; it < matchedPath.length; it++) {
-              if ((null === matchedPath[it].fileNamePattern) || matchedPath[it].fileNamePattern.test(fileName))  {
-                bustAssetResources.digester(fileObj.outputFileText, function (err, signature) {
-                  if (err) {
-                    throw new Error('Error when working out the hash digest from the file: ' + outputFileName + '. Details: ' + err.message);
-                  }
-
-                  fileObj.outputFileName =  path.dirname(outputFileName) + path.sep + getFileNameWithSufix(fileName, thisModuleConfig.splitter + signature);
-                  next();
-                });
-
-                break;
-              }
-            };
-          } else {
-            next();
-          }
-        }
-      });
-    });
-  } else {
-    next();
-  }
-}
-
 function getBustAssetResources(bustCacheModuleConfig, callback) {
   var pathsFilePatternsRefs;
   
@@ -163,22 +118,40 @@ function getBustAssetResources(bustCacheModuleConfig, callback) {
   }
 }
 
-function performActionIfMatch(mimosaConfig, workflowInfo, actionFn, next) {
+function performActionIfMatch(mimosaConfig, workflowInfo, actions, next) {
   var destFolder = mimosaConfig.watch.compiledDir;
 
   if (workflowInfo.files && ('string' === typeof destFolder)) {
     getBustAssetResources(mimosaConfig[mimosaConfigId], function (err, bustAssetResources) {
+      if (err) {
+        throw new Error('Error when getting the bust assets resources. Details: ' + err.message);
+      }
+
       workflowInfo.files.forEach(function (fileObj) {
+        var actionsExecuter;
         var it;
+        var subPath;
+        var matchedPath;
         var outputFileName = fileObj.outputFileName;
-        var subPath = outputFileName.substring(outputFileName.indexOf(destFolder) + destFolder.length + 1);
-        var matchedPath = bustAssetResources.indexedPathsFileNamePatterns[subPath];
 
         if (outputFileName) {
+          subPath = path.dirname(outputFileName.substring(outputFileName.indexOf(destFolder) + destFolder.length + 1)) + path.sep;
+          matchedPath = bustAssetResources.indexedPathsFileNamePatterns[subPath];
+
           if (undefined !== matchedPath) {
             for (it = 0; it < matchedPath.length; it++) {
               if ((null === matchedPath[it].fileNamePattern) || matchedPath[it].fileNamePattern.test(path.basename(outputFileName)))  {
-                actionFn(mimosaConfig, workflowInfo, bustAssetResources, fileObj, next);
+
+                (actionsExecuter = function () {
+                  var action = actions.shift();
+
+                  if (undefined === action) {
+                    next();
+                  } else {
+                    action(mimosaConfig, workflowInfo, bustAssetResources, fileObj, actionsExecuter);
+                  }
+                })();
+
                 return;
               }
             }
@@ -192,10 +165,24 @@ function performActionIfMatch(mimosaConfig, workflowInfo, actionFn, next) {
   }
 }
 
+function createBustedAssetFromMatch(mimosaConfig, workflowInfo, bustAssetResources, mimosaFileObj, next) {
+  var thisModuleConfig = mimosaConfig[mimosaConfigId];
+  var outputFileName = mimosaFileObj.outputFileName;
+  
+  bustAssetResources.digester(mimosaFileObj.outputFileText, function (err, signature) {
+    if (err) {
+      throw new Error('Error when working out the hash digest from the file: ' + outputFileName + '. Details: ' + err.message);
+    }
+
+    mimosaFileObj.outputFileName =  path.dirname(outputFileName) + path.sep + getFileNameWithSufix(path.basename(outputFileName), thisModuleConfig.splitter + signature);
+    next();
+  });
+}
+
 function removeBustedAssetFromMatch(mimosaConfig, workflowInfo, bustAssetResources, mimosaFileObj, next) {
   var thisModuleConfig = mimosaConfig[mimosaConfigId];
   var destFolder = mimosaConfig.watch.compiledDir;
-  var ouputFileName = mimosaFileObj.outputFileName;
+  var outputFileName = mimosaFileObj.outputFileName;
   var outputPath = path.dirname(outputFileName);
   var subPath = outputFileName.substring(outputFileName.indexOf(destFolder) + destFolder.length + 1);
   var fileName = path.basename(subPath);
@@ -216,11 +203,13 @@ function removeBustedAssetFromMatch(mimosaConfig, workflowInfo, bustAssetResourc
     var bustedPathFileName;
 
     if (err) {
-      throw new Error('Error when locating the busted file of the file: ' + outputFileName + '. Details: ' + err.message);
+      logger.warn('Error when locating the busted file of the file: ' + outputFileName + '. Details: ' + err.message);
+      next();
+      return;
     }
 
     if (0 === filesList.length) {
-      logger.info(moduleName + ' has not found a busted file generated from: ' + fileObj.outputFileName); 
+      logger.info(moduleName + ' has not found a busted file generated from: ' + mimosaFileObj.outputFileName); 
       next();
       return;
     }
@@ -262,109 +251,10 @@ function removeBustedAssetFromMatch(mimosaConfig, workflowInfo, bustAssetResourc
   });
 }
 
-function removeBustedAsset(mimosaConfig, workflowInfo, next) {
-  var thisModuleConfig = mimosaConfig[mimosaConfigId];
-  var destFolder = mimosaConfig.watch.compiledDir;
-
-  if (workflowInfo.files && ('string' === typeof destFolder)) {
-    getBustAssetResources(thisModuleConfig, function (err, bustAssetResources) {
-      workflowInfo.files.forEach(function (fileObj) {
-        var it;
-        var subPath;
-        var fileName;
-        var matchedPath;
-        var tearedOutputFileName;
-        var hashDigestLength;
-        var bustedFileNamePattern;
-        var outputPath;
-        var outputFileName = fileObj.outputFileName;
-
-        if (outputFileName) {
-          outputPath = path.dirname(outputFileName);
-          subPath = outputFileName.substring(outputFileName.indexOf(destFolder) + destFolder.length + 1);
-          fileName = path.basename(subPath);
-          subPath = subPath.substr(0, subPath.length - fileName.length);
-          matchedPath = bustAssetResources.indexedPathsFileNamePatterns[subPath];
-
-          if (undefined !== matchedPath) {
-            for (it = 0; it < matchedPath.length; it++) {
-              if ((null === matchedPath[it].fileNamePattern) || matchedPath[it].fileNamePattern.test(fileName))  {
-                hashDigestLength = bustAssetResources.digesterInfo.hashLength; 
-                tearedOutputFileName = tearPathFileName(outputFileName);
-                
-                if ('' === tearedOutputFileName.ext) {
-                  bustedFileNamePattern = quoteStringAsRegExp(tearedOutputFileName.name) + quoteStringAsRegExp(thisModuleConfig.splitter) + '[A-Fa-f0-9]{' + hashDigestLength + ',' + hashDigestLength + '}'; 
-                } else {
-                  bustedFileNamePattern = quoteStringAsRegExp(tearedOutputFileName.name) + quoteStringAsRegExp(thisModuleConfig.splitter) + '[A-Fa-f0-9]{' + hashDigestLength + ',' + hashDigestLength + '}\.' + tearedOutputFileName.ext; 
-                }
-
-                getFilesListInDirectory(outputPath, new RegExp(bustedFileNamePattern), function (err, filesList) { 
-                  var bustedPathFileName;
-
-                  if (err) {
-                    throw new Error('Error when locating the busted file of the file: ' + outputFileName + '. Details: ' + err.message);
-                  }
-                
-                  if (0 === filesList.length) {
-                    logger.info(moduleName + ' has not found a busted file generated from: ' + fileObj.outputFileName); 
-                    next();
-                    return;
-                  }
-
-                  if (1 < filesList.length) {
-                    logger.warn(moduleName + ' has found more than one file busted files have been matched, so the removal action has been aborted. Original file output file: ' + fileObj.outputFileName); 
-                    next();
-                    return;
-                  }
-
-                  bustedPathFileName = filesList[0].dir + filesList[0].fileName; 
-                  
-                  fs.readFile(bustedPathFileName, function (err, fileContent) {
-                    if (err) {
-                      throw new Error('Error when reading the content of the file: ' + bustedPathFileName + '. Details: ' + err.message);
-                    }
-
-                    bustAssetResources.digester(fileContent, function (err, signature) {
-                      if (err) {
-                        throw new Error('Error when working out the hash digest from the file: ' + bustedPathFileName + '. Details: ' + err.message);
-                      }
-
-                      if (-1 === filesList[0].fileName.indexOf(signature)) {
-                        logger.warn(moduleName + ' found a busted file whic was not geneated by ' + moduleName + '. File path: ' + bustedPathFileName);
-                        next();
-                        return;
-                      }
-
-                      fs.unlink(bustedPathFileName, function (err) {
-                        if (err) {
-                          throw new Error('Error when deleting the busted file: ' + bustedPathFileName + '. Details: ' + err.message);
-                        }
-
-                        logger.info(moduleName + ' removed the file : ' + bustedPathFileName); 
-                        next();
-                      });
-                    });
-                  });
-                });
-
-                break;
-              }
-            };
-          } else {
-            next();
-          }
-        }
-      });
-    });
-  } else {
-    next();
-  }
-}
 
 module.exports = {
  bustAllAssets: bustAllAssets,
- bustAsset: bustAsset,
- removeBustedAsset: removeBustedAsset,
  removeBustedAssetFromMatch: removeBustedAssetFromMatch,
+ createBustedAssetFromMatch: createBustedAssetFromMatch,
  performActionIfMatch: performActionIfMatch
 };
