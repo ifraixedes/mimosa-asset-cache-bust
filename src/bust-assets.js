@@ -17,13 +17,14 @@ var getFilesList = fileUtils.getFilesList;
 var getFileNameWithSufix = fileUtils.getFileNameWithSufix;
 var getFilesListInDirectory = fileUtils.getFilesListInDirectory;
 var tearPathFileName = fileUtils.tearPathFileName;
+var getPathsFileNamePatterns = fileUtils.getPathsFileNamePatterns;
 var getHashDigester = digestUtils.getHashDigester;
 var getHashDigesterInfo = digestUtils.getHashDigesterInfo;
 var quoteStringAsRegExp = regexpUtils.quoteStringAsRegExp;
 
 var moduleCache = {};
 
-function bustAllAssets(mimosaConfig) {
+function bustAllAssets(mimosaConfig, next) {
   var thisModuleConfig = mimosaConfig[mimosaConfigId];
   var digester = getHashDigester(thisModuleConfig.hash, 'hex');
   var filter;
@@ -41,6 +42,10 @@ function bustAllAssets(mimosaConfig) {
       if (err) {
         throw new Error(moduleName + ' failed, error details: ' + err.message);
       } 
+
+      if (next) {
+        next();
+      }
     });
   });
 }
@@ -51,35 +56,32 @@ function renameAssets(assetsFileList, digesterFunc, splitter, callback) {
   assetsFileList.forEach(function (fileRefObj) {
     fs.readFile(fileRefObj.dir + fileRefObj.fileName, function (err, fileContent) {
       if (err) {
-        throw new Error('Error when reading the content of the file: ' + fileRefObj.dir + fileRefObj.fileName + '. Details: ' + err.message);
+        callback(Error('Error when reading the content of the file: ' + fileRefObj.dir + fileRefObj.fileName + '. Details: ' + err.message));
+        return;
       }
 
       digesterFunc(fileContent, function (err, signature) {
         var outputFileName;
-
-        if (err) {
-          throw new Error('Error when working out the hash digest from the file: ' + fileRefObj.dir + fileRefObj.fileName + '. Details: ' + err.message);
-        }
-
-        if (0 === assetsLeft) {
+        
+        if (-1 === assetsLeft) {
           return;
         }
 
         if (err) {
-          assetsLeft = 0;
-          callback(err);
+          callback(Error('Error when working out the hash digest from the file: ' + fileRefObj.dir + fileRefObj.fileName + '. Details: ' + err.message));
+          assetsLeft = -1;
           return;
         }
 
         outputFileName = getFileNameWithSufix(fileRefObj.fileName, splitter + signature);
 
         fs.rename(fileRefObj.dir + path.sep + fileRefObj.fileName, fileRefObj.dir + path.sep + outputFileName, function (err) {
-          if (0 === assetsLeft) {
+          if (-1 === assetsLeft) {
             return;
           }
 
           if (err) {
-            assetsLeft = 0;
+            assetsLeft = -1;
             callback(new Error('Error when renaming ' + fileRefObj.dir + fileRefObj.fileName + ' to ' + fileRefObj.dir + outputFileName + '. Details: ' + err.message));
             return;
           }
@@ -93,6 +95,27 @@ function renameAssets(assetsFileList, digesterFunc, splitter, callback) {
       });
     });
   });
+}
+
+function cleanBustAssets(assetsFileList, digesterFunc, splitter, callback) {
+  var pathFileNamePatterns = [];
+  
+  getPathsFileNamePatterns(assetsFilesList).forEach(function () {
+    var pathsIdx = {};
+
+    return function (pathFilePattern) {
+      if (undefined === pathsIdx[pathFilePattern.dir]) {
+        pathsIdx[pathFilePattern] = true;
+        pathsFileNamPatterns.push([{
+          dir: pathFilePattern.dir,
+          fileNamePattern: null
+        }]);
+      }
+    };
+  }());
+
+  // TODO continue here!!
+
 }
 
 function getBustAssetResources(bustCacheModuleConfig, callback) {
@@ -138,10 +161,10 @@ function performActionIfMatch(mimosaConfig, workflowInfo, actions, next) {
           subPath = path.dirname(outputFileName.substring(outputFileName.indexOf(destFolder) + destFolder.length + 1)) + path.sep;
           matchedPath = bustAssetResources.indexedPathsFileNamePatterns[subPath];
 
+
           if (undefined !== matchedPath) {
             for (it = 0; it < matchedPath.length; it++) {
               if ((null === matchedPath[it].fileNamePattern) || matchedPath[it].fileNamePattern.test(path.basename(outputFileName)))  {
-
                 (actionsExecuter = function () {
                   var action = actions.shift();
 

@@ -18,7 +18,7 @@ exports.defaults = function() {
 };
 
 exports.placeholder = function() {
-  return "\t\n\n"+
+  return "\t\n\n" +
          "  # " + mimosaConfigId + ":    # Renamed the specified assets files to bust the browser cache\n" +
          "                               # providing an unique file name when they change, using the\n" + 
          "                               # --assetsBusting flag.\n" +

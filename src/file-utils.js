@@ -118,7 +118,7 @@ function getFilesListInDirectory(dirPath, fileNamePattern, callback) {
     });
 
     if (0 === nAsyncCalls) {
-      callback(err, onlyFilesList);
+      callback(null, onlyFilesList);
       return;
     }
   });
