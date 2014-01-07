@@ -18,7 +18,7 @@ var fs = require('fs');
  *      files found in the specified paths. Each object has two attributes ```dir```, with the
  *      directory path, and ```fileName```.
  */
-function getFilesList(filePaths, basePath, callback) {
+function getFilesList(filePaths, basePath, ignoreErrNonExistingPaths, callback) {
   var completeFilesList = [];
   var pushAll = completeFilesList.push;
   var nAsyncCalls = 0;
@@ -57,13 +57,17 @@ function getFilesList(filePaths, basePath, callback) {
       }
       
       if (err) {
-        nAsyncCalls = -1;
-        callback(new Error('Error when getting the files list from ' + pathFile + '. Details: ' + err.message));
-        return;
+        if (ignoreErrNonExistingPaths && /^ENOENT/.test(err.message)) {
+          nAsyncCalls--;
+        } else {
+          nAsyncCalls = -1;
+          callback(new Error('Error when getting the files list from ' + pathFile + '. Details: ' + err.message));
+          return;
+        }
+      } else {
+        nAsyncCalls--;
+        pushAll.apply(completeFilesList, filesList);
       }
-
-      nAsyncCalls--;
-      pushAll.apply(completeFilesList, filesList);
 
       if (0 === nAsyncCalls) {
         callback(null, completeFilesList);
