@@ -14,6 +14,7 @@ var groupBy = _.groupBy;
 var moduleName = packageJSON.name;
 var mimosaConfigId = packageJSON.config.mimosaConfigId;
 var getFilesList = fileUtils.getFilesList;
+var getFilesListFromPatterns = fileUtils.getFilesListFromPatterns;
 var getFileNameWithSufix = fileUtils.getFileNameWithSufix;
 var getFilesListInDirectory = fileUtils.getFilesListInDirectory;
 var tearPathFileName = fileUtils.tearPathFileName;
@@ -27,9 +28,11 @@ var moduleCache = {};
 function bustAllAssets(mimosaConfig, next) {
   var thisModuleConfig = mimosaConfig[mimosaConfigId];
   var digester = getHashDigester(thisModuleConfig.hash, 'hex');
+  var next = next || function () {};
   var filter;
 
   if (!thisModuleConfig.files) {
+    next();
     return;
   } 
   
@@ -43,9 +46,7 @@ function bustAllAssets(mimosaConfig, next) {
         throw new Error(moduleName + ' failed, error details: ' + err.message);
       } 
 
-      if (next) {
-        next();
-      }
+      next();
     });
   });
 }
@@ -97,25 +98,86 @@ function renameAssets(assetsFileList, digesterFunc, splitter, callback) {
   });
 }
 
-function cleanBustAssets(assetsFileList, digesterFunc, splitter, callback) {
-  var pathFileNamePatterns = [];
-  
-  getPathsFileNamePatterns(assetsFilesList).forEach(function () {
-    var pathsIdx = {};
+function cleanBustAssets(mimosaConfig, next) {
+  var thisModuleConfig = mimosaConfig[mimosaConfigId];
+  var next = next || function () {};
 
-    return function (pathFilePattern) {
-      if (undefined === pathsIdx[pathFilePattern.dir]) {
-        pathsIdx[pathFilePattern] = true;
-        pathsFileNamPatterns.push([{
-          dir: pathFilePattern.dir,
-          fileNamePattern: null
-        }]);
+  if (!thisModuleConfig.files) {
+    next();
+    return;
+  } 
+
+
+  getHashDigesterInfo(thisModuleConfig.hash, 'hex', function (err, hashDigesterInfo) {
+    var pathsFileNamePatterns;
+
+    if (err) {
+      throw new Error(moduleName + ' received an error when getting the information of digest algorithms. Details: ' + err.message);
+      return;
+    } 
+
+    pathsFileNamePatterns = [];
+
+    getPathsFileNamePatterns(thisModuleConfig.files).forEach(function () {
+      var pathsIdx = {};
+
+      return function (pathFilePattern) {
+        if (undefined === pathsIdx[pathFilePattern.dir]) {
+          pathsIdx[pathFilePattern] = true;
+          pathsFileNamePatterns.push({
+            dir: pathFilePattern.dir,
+            fileNamePattern: new RegExp('.*' + thisModuleConfig.splitter + '[a-zA-Z0-9]{' + hashDigesterInfo.hashLength + ',' + hashDigesterInfo.hashLength + '}')
+          });
+        }
+      };
+    }());
+
+    getFilesListFromPatterns(pathsFileNamePatterns, mimosaConfig.watch.compiledDir, true, function (err, assetsFilesList) {
+     var digester;
+
+      if (err) {
+        throw new Error(moduleName + ' failed, error details: ' + err.message);
       }
-    };
-  }());
 
-  // TODO continue here!!
+      if (0 === assetsFilesList.length) {
+        next();
+        return;
+      }
 
+      digester = getHashDigester(thisModuleConfig.hash, 'hex');
+
+      assetsFilesList.forEach(function(bustedFileObj) {
+        var bustedPathFileName =bustedFileObj.dir + bustedFileObj.fileName; 
+
+        fs.readFile(bustedPathFileName, function (err, fileContent) {
+          if (err) {
+            throw new Error('Error when reading the content of the file: ' + bustedPathFileName + '. Details: ' + err.message);
+          }
+
+          digester(fileContent, function (err, signature) {
+            if (err) {
+              throw new Error('Error when working out the hash digest from the file: ' + bustedPathFileName + '. Details: ' + err.message);
+            }
+
+            if (-1 === bustedFileObj.fileName.indexOf(signature)) {
+              logger.warn(moduleName + ' found a busted file which was not geneated by ' + moduleName + '. File path: ' + bustedPathFileName);
+              next();
+              return;
+            }
+
+            fs.unlink(bustedPathFileName, function (err) {
+              if (err) {
+                throw new Error('Error when deleting the busted file: ' + bustedPathFileName + '. Details: ' + err.message);
+              }
+
+              logger.info(moduleName + ' removed the file : ' + bustedPathFileName); 
+              next();
+            });
+          });
+        });
+      });
+    });
+  });
 }
 
 function getBustAssetResources(bustCacheModuleConfig, callback) {
@@ -123,7 +185,7 @@ function getBustAssetResources(bustCacheModuleConfig, callback) {
   
   if (undefined === moduleCache.bustAssetResources) {
     moduleCache.bustAssetResources = {};
-    pathsFilePatternsRefs = fileUtils.getPathsFileNamePatterns(bustCacheModuleConfig.files); 
+    pathsFilePatternsRefs = getPathsFileNamePatterns(bustCacheModuleConfig.files); 
     moduleCache.bustAssetResources.indexedPathsFileNamePatterns = groupBy(pathsFilePatternsRefs, 'dir');
     moduleCache.bustAssetResources.digester = digestUtils.getHashDigester(bustCacheModuleConfig.hash, 'hex');
 
@@ -215,8 +277,7 @@ function removeBustedAssetFromMatch(mimosaConfig, workflowInfo, bustAssetResourc
   
   subPath = subPath.substr(0, subPath.length - fileName.length);
 
-
-  if ('' === tearedOutputFileName.ext) {
+if ('' === tearedOutputFileName.ext) {
     bustedFileNamePattern = quoteStringAsRegExp(tearedOutputFileName.name) + quoteStringAsRegExp(thisModuleConfig.splitter) + '[A-Fa-f0-9]{' + hashDigestLength + ',' + hashDigestLength + '}'; 
   } else {
     bustedFileNamePattern = quoteStringAsRegExp(tearedOutputFileName.name) + quoteStringAsRegExp(thisModuleConfig.splitter) + '[A-Fa-f0-9]{' + hashDigestLength + ',' + hashDigestLength + '}\.' + tearedOutputFileName.ext; 
@@ -240,8 +301,7 @@ function removeBustedAssetFromMatch(mimosaConfig, workflowInfo, bustAssetResourc
     if (1 < filesList.length) {
       logger.warn(moduleName + ' has found more than one file busted files have been matched, so the removal action has been aborted. Original file output file: ' + fileObj.outputFileName); 
       next();
-      return;
-    }
+      return; }
 
     bustedPathFileName = filesList[0].dir + filesList[0].fileName; 
 
@@ -256,7 +316,7 @@ function removeBustedAssetFromMatch(mimosaConfig, workflowInfo, bustAssetResourc
         }
 
         if (-1 === filesList[0].fileName.indexOf(signature)) {
-          logger.warn(moduleName + ' found a busted file whic was not geneated by ' + moduleName + '. File path: ' + bustedPathFileName);
+          logger.warn(moduleName + ' found a busted file which was not geneated by ' + moduleName + '. File path: ' + bustedPathFileName);
           next();
           return;
         }
@@ -277,6 +337,7 @@ function removeBustedAssetFromMatch(mimosaConfig, workflowInfo, bustAssetResourc
 
 module.exports = {
  bustAllAssets: bustAllAssets,
+ cleanBustAssets: cleanBustAssets,
  removeBustedAssetFromMatch: removeBustedAssetFromMatch,
  createBustedAssetFromMatch: createBustedAssetFromMatch,
  performActionIfMatch: performActionIfMatch

@@ -72,6 +72,49 @@ function getFilesList(filePaths, basePath, callback) {
   });
 }
 
+function getFilesListFromPatterns(pathsFileNamesPatterns, basePath, ignoreErrNonExistingPaths, callback) {
+  var completeFilesList = [];
+  var pushAll = completeFilesList.push;
+  var nAsyncCalls = pathsFileNamesPatterns.length;
+
+  if (0 === nAsyncCalls) {
+    callback(null, completeFilesList);
+    return;
+  }
+
+  pathsFileNamesPatterns.forEach(function (pathFileNamePattern) {
+    var dir;
+    
+    if (basePath) {
+      dir = path.normalize(basePath + path.sep + pathFileNamePattern.dir);
+    } else {
+      dir = pathFileNamePattern.dir;
+    }
+
+    getFilesListInDirectory(dir, pathFileNamePattern.fileNamePattern, function (err, filesList) {
+      if (nAsyncCalls < 0) {
+        return;
+      }
+
+      if (err) {
+        if (ignoreErrNonExistingPaths && /^ENOENT/.test(err.message)) {
+          nAsyncCalls--;
+        } else {
+          nAsyncCalls = -1;
+          callback(new Error('Error when getting the busted files list from ' + dir + '. Details: ' + err.message));
+        }
+      } else {
+        nAsyncCalls--;
+        pushAll.apply(completeFilesList, filesList);
+      }
+
+      if (0 === nAsyncCalls) {
+        callback(null, completeFilesList);
+      }
+    });
+  });
+}
+
 function getFilesListInDirectory(dirPath, fileNamePattern, callback) {
   dirPath = path.normalize(dirPath + path.sep);
 
@@ -185,6 +228,7 @@ function getFileNameWithSufix(fileName, sufix) {
 
 module.exports = {
   getFilesList: getFilesList,
+  getFilesListFromPatterns: getFilesListFromPatterns,
   getPathsFileNamePatterns: getPathsFileNamePatterns, 
   getFilesListInDirectory: getFilesListInDirectory,
   tearPathFileName: tearPathFileName,

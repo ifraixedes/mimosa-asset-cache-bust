@@ -5,6 +5,7 @@ var config = require('./config');
 var bustAssets = require('./bust-assets');
 
 var bustAllAssets = bustAssets.bustAllAssets;
+var cleanBustAssets = bustAssets.cleanBustAssets;
 var createBustedAssetFromMatch = bustAssets.createBustedAssetFromMatch;
 var removeBustedAssetFromMatch = bustAssets.removeBustedAssetFromMatch;
 
@@ -27,6 +28,10 @@ function registration(mimosaConfig, register) {
     });
   }
 
+  register(['postClean'], 'init', function (mimosaConfig, workflowInfo, next) {
+    cleanBustAssets(mimosaConfig, next);
+  });
+
 //    register(['update'], 'beforeWrite', function (mimosaConfig, workflowInfo, next) {
 //      bustAssets.performActionIfMatch(mimosaConfig, workflowInfo, [removeBustedAssetFromMatch, createBustedAssetFromMatch], next);
 //    });
@@ -35,10 +40,10 @@ function registration(mimosaConfig, register) {
 //      bustAssets.performActionIfMatch(mimosaConfig, workflowInfo, [removeBustedAssetFromMatch], next);
 //    });
 //
-    register(['cleanFile'], 'beforeDelete', function (mimosaConfig, workflowInfo, next) {
-      bustAssets.performActionIfMatch(mimosaConfig, workflowInfo, [removeBustedAssetFromMatch], next);
-      next();
-    });
+//    register(['cleanFile'], 'beforeDelete', function (mimosaConfig, workflowInfo, next) {
+//      bustAssets.performActionIfMatch(mimosaConfig, workflowInfo, [removeBustedAssetFromMatch], next);
+//      next();
+//    });
 }
 
 function registerCommand(program, retrieveConfig) {
