@@ -33,7 +33,7 @@ function getFilesList(filePaths, basePath, ignoreErrNonExistingPaths, callback) 
   }
 
   if (0 === filePaths.length) {
-    callback(null, null);
+    callback(null, completeFilesList);
     return;
   }
 
