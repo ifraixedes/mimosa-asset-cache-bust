@@ -1,18 +1,17 @@
 {
   "name": "mimosa-asset-cache-bust",
   "version": "0.0.1",
-  "homepage": "https://github.com/mwagg/mimosa-asset-cache-bust.git",
-  "author": "Mike Wagg",
-  "description": "mimosa module to rename assets files appending a signature to avoid to deal with browser cache when they change",
+  "homepage": "https://github.com/ifraixedes/mimosa-asset-cache-bust.git",
+  "author": "Ivan Fraixedes <ifcdev@gmail.com>",
+  "description": "mimosa module to rename assets files appending a file digest providing a unique name, so breaking the browser cache, when they change",
   "contributors": [
     {
-      "name": "Ivan Fraixedes",
-      "email": "ifcdev@gmail.com"
+      "name": "Mike Wag"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/mwagg/mimosa-asset-cache-bust.git"
+    "url": "https://github.com/ifraixedes/mimosa-asset-cache-bust.git"
   },
   "keywords": [
     "mimosa",
