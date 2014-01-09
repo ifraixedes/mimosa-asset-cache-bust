@@ -1,6 +1,6 @@
 {
   "name": "mimosa-asset-cache-bust",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "https://github.com/ifraixedes/mimosa-asset-cache-bust.git",
   "author": "Ivan Fraixedes <ifcdev@gmail.com>",
   "description": "mimosa module to rename assets files appending a file digest providing a unique name, so breaking the browser cache, when they change",

@@ -15,6 +15,8 @@ The module renames the assets left in the compiled directory (`compildedDir` pro
 
 The module only performs when optimization flag (`-o` or `--optimize`) but it can be run as a mimosa command `mimosa bust-assets`.
 
+Bear in mind the module doesn't provide any mechanism to change the views and/or templates where they are referenced, so it is your task to find out how to update the references; e.g. in server template engine you may have a function that resolve the name depending of your environment and returning each appropriated asset's name base by an id.
+
 ## Configuration
 
 ### Default
