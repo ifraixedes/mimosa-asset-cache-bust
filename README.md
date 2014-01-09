@@ -1,15 +1,4 @@
-Building a Module
-===
-
-`mimosa mod:install` is how you would install this module locally to test it.
-
-The contents of this skeleton consist of some example code, a ton of comments and some [Docco](http://jashkenas.github.io/docco/) style documentation.
-
-If you have any questions about building a mimosa module, feel free to hit up @mimosajs or open up [an issue](https://github.com/dbashford/mimosa/issues?state=open) for discussion purposes.
-
-The rest of this README is what you may want to transform the README to once development is complete.
-
-Your Module's Name Here
+Mimosa Asset Cache Bust 
 ===========
 
 ## Overview
@@ -18,17 +7,55 @@ For more information regarding Mimosa, see http://mimosa.io
 
 ## Usage
 
-Add `'Your Module's Name` to your list of modules.  That's all!  Mimosa will install the module for you when you start up.
+Add `asset-cache-bust` to your list of modules.  That's all!  Mimosa will install the module for you when you start up.
 
 ## Functionality
 
+The module renames the assets left in the compiled directory (`compildedDir` property from `watch` Mimosa configuration section) which match the paths and/or file name patterns from the `files` option configuration of this module.
 
-## Default Config
+The module only performs when optimization flag (`-o` or `--optimize`) but it can be run as a mimosa command `mimosa bust-assets`.
+
+## Configuration
+
+### Default
+
+The default configuration added to your mimosa configuration file when the module is installed is:
 
 ```
+assetsCacheBust:
+  hash: 'md5'
+  splitter: '-'
+  files: []
 ```
 
-## Example Config
+### Properties
+
+The default configuration has all the configuration parameters that this module has and they are commented.
+Bear in mind that by default the `files` configuration property is an empty array, so it means that any asset will busted.
+
+* hash: It defines the digest algorithm supported by [node crypto API](http://nodejs.org/api/crypto.html#crypto_class_hash) to use to work out a uniquely identifier for each asset regarding its content.
+* splitter: The character(s) to use to separate the worked hash digest of the asset from the original name, to be used to rename the asset; if the file has an extension the hash digest will be added between the name and the extension.
+* files: A string array of paths with or without a file name pattern to match files in the compilation directory (mimosa `compileDir` property of `watch` section) which have to be busted.
+  Path are relative to the compilation directory; when all the assets (files) should be busted from a directory, a path with file name pattern must be defined and to allow to this module to distinguish between them, it must end with '/', bearing in mind that only files in that path are matched, so the descendant directories are skipped, it means that the modules doesn't recurse into subdirectories.
+  When only some files or just one should be busted, then a file pattern must be used after the path directory; a file pattern is a string which will be used to create a regular expression (just calling new RegExp constructor), so make sure that when you write them, you scape the regular expression special characters to fit what file names you would like to match.
+
+### Example
+
+Here, you can see an example to set up module; the `files` property matches all the javascript files (files with 'js' extension) are in 'scripts' directory and all the files are in 'stylesheets' directory; remember that those directories are related to the directory compilation 'compileDir'. 
 
 ```
+assetsCacheBust:
+  hash: 'sha1'
+  splitter: '='
+  files: ['script/.*\\.js', 'stylesheets/']
 ```
+
+## The internals
+
+The module renames the matched files appending to the original name (between the name and the extension), separated by the `splitter` configuration, a hash digest worked out from the content of the file. The digest algorithm to use is defined by the configuration's `hash` property, which must match to a supported hash digest algorithm by [node crypto API](http://nodejs.org/api/crypto.html#crypto_class_hash).
+
+## License
+
+The MIT License
+
+Copyright (c) 2014 Ivan Fraixedes Cugat <ifcdev@gmail.com>
