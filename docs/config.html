@@ -19,8 +19,23 @@
           <div id="jump_page">
             
               
+              <a class="source" href="bust-assets.html">
+                bust-assets.js
+              </a>
+            
+              
               <a class="source" href="config.html">
                 config.js
+              </a>
+            
+              
+              <a class="source" href="digest-utils.html">
+                digest-utils.js
+              </a>
+            
+              
+              <a class="source" href="file-utils.html">
+                file-utils.js
               </a>
             
               
@@ -45,12 +60,61 @@
         <li id="section-1">
             <div class="annotation">
               
-              <div class="pilwrap for-h2">
+              <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              <h2>Module Configuration</h2>
-
+              
             </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-pi">'use strict'</span>;
+
+<span class="hljs-keyword">var</span> crypto = <span class="hljs-built_in">require</span>(<span class="hljs-string">'crypto'</span>);
+<span class="hljs-keyword">var</span> packageJSON = <span class="hljs-built_in">require</span>(<span class="hljs-string">'../package.json'</span>);
+
+<span class="hljs-keyword">var</span> mimosaConfigId = packageJSON.config.mimosaConfigId;
+
+exports.defaults = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+  <span class="hljs-keyword">var</span> configObj = {};
+  
+  configObj[mimosaConfigId] = {
+    hash: <span class="hljs-string">'md5'</span>,
+    splitter: <span class="hljs-string">'-'</span>,
+    files: []
+  };
+ 
+  <span class="hljs-keyword">return</span> configObj;
+};
+
+exports.placeholder = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+  <span class="hljs-keyword">return</span> <span class="hljs-string">"\t\n\n"</span> +
+         <span class="hljs-string">"  # "</span> + mimosaConfigId + <span class="hljs-string">":    # Renamed the specified assets files to bust the browser cache\n"</span> +
+         <span class="hljs-string">"                               # providing an unique file name when they change, using the\n"</span> + 
+         <span class="hljs-string">"                               # --assetsBusting flag.\n"</span> +
+         <span class="hljs-string">"    # hash: 'md5'              # String that specify the hash algorithm to use for create file\n"</span> +
+         <span class="hljs-string">"                               # signature which will be appended to the asset file name;\n"</span> + 
+         <span class="hljs-string">"                               # 'md5' by default\n"</span> +
+         <span class="hljs-string">"    # splitter: '-'            # String which specifies the character(s) to use to add between\n"</span> +
+         <span class="hljs-string">"                               # the file name and the signature; hyphen by default.\n"</span> +
+         <span class="hljs-string">"    # files: []                # Array with assets file path to bust. Each element must be a\n "</span> +
+         <span class="hljs-string">"                               # string which must one of the next values:\n"</span> + 
+         <span class="hljs-string">"                               #  - A full path to a file name\n"</span> + 
+         <span class="hljs-string">"                               #  - A full path to a directory; it must end with the path\n"</span>
+         <span class="hljs-string">"                               #    separartor character\n"</span> 
+         <span class="hljs-string">"                               #  - A full path to a directory followed with a pattern to match\n"</span>
+         <span class="hljs-string">"                               #    file names into it; so the pattern string must be a string\n"</span>
+         <span class="hljs-string">"                               #    which the right syntax to build a RegExp object\n"</span>
+         <span class="hljs-string">"                               # Note: A full path means a path which is resolved from mimosa app"</span>;
+};
+
+exports.validate = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(config, validators)</span> {</span>
+  <span class="hljs-keyword">var</span> moduleConfig = config[mimosaConfigId];
+  <span class="hljs-keyword">var</span> defaultConfig = <span class="hljs-keyword">this</span>.defaults();
+  <span class="hljs-keyword">var</span> errors = [];
+  <span class="hljs-keyword">var</span> configKey;
+
+  <span class="hljs-keyword">if</span> (validators.ifExistsIsObject(errors, mimosaConfigId + <span class="hljs-string">' config'</span>, moduleConfig)) {
+    <span class="hljs-keyword">if</span> (validators.ifExistsIsString(errors, mimosaConfigId + <span class="hljs-string">'.hash'</span>, moduleConfig.hash)) {
+      <span class="hljs-keyword">try</span> {</pre></div></div>
             
         </li>
         
@@ -61,122 +125,20 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>The code contained herein is all example code and shouldn&#39;t be used verbatim.
-The example in this case is modified from the mimosa-minify module.</p>
+              <p>to check hash algorithm is supported</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="string">"use strict"</span></pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-3">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-3">&#182;</a>
-              </div>
-              <p>The defaults function should return a JSON object containing the default
-config for your module. If your module has no config, the function can be
-removed or return null. Mimosa uses this function when applying default
-configuration to a user&#39;s config.</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>exports.defaults = <span class="keyword">function</span>() {
-  <span class="keyword">return</span> {
-    minify: {
-      exclude: [<span class="regexp">/\.min\./</span>]
-    }
-  };
-};</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-4">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-4">&#182;</a>
-              </div>
-              <p>The placeholder function should return a string that represents the
-mimosa-config placeholder for your configuration defaults including
-explanations for each config setting where appropriate.  The content
-of the string should be all commented out. If you have no config,
-the function can be removed or can return null.  This function is called
-when Mimosa is creating an initial mimosa-config using &#39;mimosa new&#39; or
-&#39;mimosa config&#39;</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>exports.placeholder = <span class="keyword">function</span>() {
-  <span class="keyword">return</span> <span class="string">"\t\n\n"</span>+
-         <span class="string">"  # minify:                    # Configuration for non-require minification/compression via uglify\n"</span> +
-         <span class="string">"                               # using the --minify flag.\n"</span> +
-         <span class="string">"    # exclude:[/\\.min\\./]     # List of regexes to exclude files when running minification.\n"</span> +
-         <span class="string">"                               # Any path with \".min.\" in its name, like jquery.min.js, is assumed to\n"</span> +
-         <span class="string">"                               # already be minified and is ignored by default. Override this property\n"</span> +
-         <span class="string">"                               # if you have other files that you'd like to exempt from minification."</span>;
-};</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-5">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-5">&#182;</a>
-              </div>
-              <p>The validate function takes a config object (which is the entire
-mimosa-config) and a validators object which contains several useful
-validation methods. Using custom validation and validation provided
-via the validators, the validate method should find the module specific
-config, validate the settings and return a list of strings that are
-validation error messages. If there are no errors, return an empty
-array or return nothing.  Mimosa uses this function when Mimosa starts
-up to ensure the configuration has been set properly.</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>exports.validate = <span class="keyword">function</span>(config, validators) {
-  <span class="keyword">var</span> errors = [];
-  <span class="keyword">if</span> (validators.ifExistsIsObject(errors, <span class="string">"minify config"</span>, config.minify)) {
-    <span class="keyword">if</span> (validators.ifExistsIsArray(errors, <span class="string">"minify.exclude"</span>, config.minify.exclude)) {
-      <span class="keyword">var</span> exls = config.minify.exclude;
-      <span class="keyword">for</span> (<span class="keyword">var</span> _i = <span class="number">0</span>, _len = exls.length; _i &lt; _len; _i++) {
-        <span class="keyword">var</span> ex = exls[_i];
-        <span class="keyword">if</span> (<span class="keyword">typeof</span> ex !== <span class="string">"string"</span>) {
-          errors.push(<span class="string">"minify.exclude must be an array of strings"</span>);
-          <span class="keyword">break</span>;
-        }
+            <div class="content"><div class='highlight'><pre>        crypto.createHash(moduleConfig.hash);
+      } <span class="hljs-keyword">catch</span> (e) {
+        errors.push(mimosaConfigId + <span class="hljs-string">'.hash must specify a hash algorithm supported by NodeJS crypto module'</span>);
       }
-    }
-  }</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-6">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
-              </div>
-              <p>The validate function is also an opportunity to do configuration massaging,
-for instance, turning a list of strings into a single RegExp.  Changes
-made to the config inside validate are permament and carried throughout
-the currently running Mimosa process.</p>
 
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  <span class="keyword">if</span> (errors.length === <span class="number">0</span> &amp;&amp; config.minify.exclude &amp;&amp; config.minify.exclude.length &gt; <span class="number">0</span>) {
-    config.minify.exclude = <span class="keyword">new</span> RegExp(config.minify.exclude.join(<span class="string">"|"</span>), <span class="string">"i"</span>);
+      validators.ifExistsIsString(errors, mimosaConfigId + <span class="hljs-string">'.splitter'</span>, moduleConfig.splitter);  
+    }
   }
 
-  <span class="keyword">return</span> errors;
+  <span class="hljs-keyword">return</span> errors;
 };</pre></div></div>
             
         </li>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>digest-utils.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="bust-assets.html">
+                bust-assets.js
+              </a>
+            
+              
+              <a class="source" href="config.html">
+                config.js
+              </a>
+            
+              
+              <a class="source" href="digest-utils.html">
+                digest-utils.js
+              </a>
+            
+              
+              <a class="source" href="file-utils.html">
+                file-utils.js
+              </a>
+            
+              
+              <a class="source" href="index.html">
+                index.js
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>digest-utils.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-pi">'use strict'</span>;
+
+<span class="hljs-keyword">var</span> crypto = <span class="hljs-built_in">require</span>(<span class="hljs-string">'crypto'</span>);
+
+<span class="hljs-keyword">var</span> HASH_TEST_BENCH = {
+  inputText: <span class="hljs-string">'This text is for testing the hash algorithms to return the number of fixed characters which generates'</span>,
+  cache: (<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> {</span>
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">clone</span><span class="hljs-params">(obj)</span> {</span>
+      <span class="hljs-keyword">return</span> <span class="hljs-built_in">JSON</span>.parse(<span class="hljs-built_in">JSON</span>.stringify(obj));
+    }
+
+    <span class="hljs-keyword">var</span> cache = {};
+    
+    <span class="hljs-keyword">return</span> {
+      get: <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(hashAlgorithm)</span> {</span>
+        <span class="hljs-keyword">return</span> (<span class="hljs-literal">undefined</span> === cache[hashAlgorithm]) ? <span class="hljs-literal">undefined</span> : clone(cache[hashAlgorithm]);
+      }, 
+      set: <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(hashAlgorithm, infoObj)</span> {</span>
+        cache[hashAlgorithm] = clone(infoObj);
+      }
+    };
+  }())
+};
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getHashDigester</span><span class="hljs-params">(hashAlgorithm, encoding)</span> {</span>
+  <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(text, callback)</span> {</span>
+    <span class="hljs-keyword">var</span> hasher = crypto.createHash(hashAlgorithm);
+
+    <span class="hljs-keyword">try</span> {
+      hasher.update(text);
+      callback(<span class="hljs-literal">null</span>, hasher.digest(encoding));
+    } <span class="hljs-keyword">catch</span> (e) {
+      callback(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Hash digest process failed with message: '</span> + e.message));
+    }
+  };
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getHashDigesterInfo</span><span class="hljs-params">(hashAlgorithm, encoding, callback)</span> {</span>
+  <span class="hljs-keyword">var</span> digester;
+  
+  <span class="hljs-keyword">if</span> (<span class="hljs-literal">undefined</span> === HASH_TEST_BENCH.cache.get(hashAlgorithm)) {
+    digester = getHashDigester(hashAlgorithm, encoding);
+
+    digester(HASH_TEST_BENCH.inputText, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(err, hash)</span> {</span>
+      <span class="hljs-keyword">if</span> (err) {
+        callback(err);
+        <span class="hljs-keyword">return</span>;
+      }
+
+      HASH_TEST_BENCH.cache.set(hashAlgorithm, {
+        hashLength: hash.length
+      });
+
+      callback(<span class="hljs-literal">null</span>, HASH_TEST_BENCH.cache.get(hashAlgorithm));
+    });
+  } <span class="hljs-keyword">else</span> {
+    callback(<span class="hljs-literal">null</span>, HASH_TEST_BENCH.cache.get(hashAlgorithm));
+  }
+}
+
+module.exports = {
+  getHashDigester: getHashDigester,
+  getHashDigesterInfo: getHashDigesterInfo
+};</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>file-utils.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="bust-assets.html">
+                bust-assets.js
+              </a>
+            
+              
+              <a class="source" href="config.html">
+                config.js
+              </a>
+            
+              
+              <a class="source" href="digest-utils.html">
+                digest-utils.js
+              </a>
+            
+              
+              <a class="source" href="file-utils.html">
+                file-utils.js
+              </a>
+            
+              
+              <a class="source" href="index.html">
+                index.js
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>file-utils.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-pi">'use strict'</span>;
+
+<span class="hljs-keyword">var</span> path = <span class="hljs-built_in">require</span>(<span class="hljs-string">'path'</span>);
+<span class="hljs-keyword">var</span> fs = <span class="hljs-built_in">require</span>(<span class="hljs-string">'fs'</span>);
+
+<span class="hljs-comment">/**
+ * Return a list of references to a files found in the specified file paths, directories and
+ * file name patterns.
+ *
+ * @param {Array} filesPaths Array of string with the files paths to a file or file pattern
+ *      (path ended with string regular expression to match the file name) or ended with the
+ *      path separator character to specify all the files from a directory.
+ * @param {String} [basePath] The path used as root directory where the paths specified in the
+ *      filesPaths parameter are referencing. If it isn't provided then empty string is used, so
+ *      the files paths should contain absolute directories or relative to the directory 
+ *      ```process.pwd()``` as node ```fs``` module does.
+ * @param {Function} callback Node convention callback function with a list of object reference 
+ *      files found in the specified paths. Each object has two attributes ```dir```, with the
+ *      directory path, and ```fileName```.
+ */</span>
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getFilesList</span><span class="hljs-params">(filePaths, basePath, ignoreErrNonExistingPaths, callback)</span> {</span>
+  <span class="hljs-keyword">var</span> completeFilesList = [];
+  <span class="hljs-keyword">var</span> pushAll = completeFilesList.push;
+  <span class="hljs-keyword">var</span> nAsyncCalls = <span class="hljs-number">0</span>;
+
+  <span class="hljs-keyword">if</span> (basePath <span class="hljs-keyword">instanceof</span> <span class="hljs-built_in">Function</span>) {
+    callback = basePath;
+    basePath = <span class="hljs-string">''</span>;
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-keyword">if</span> (basePath[basePath.length -<span class="hljs-number">1</span>] !== path.sep) {
+      basePath += path.sep;
+    }
+  }
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-number">0</span> === filePaths.length) {
+    callback(<span class="hljs-literal">null</span>, completeFilesList);
+    <span class="hljs-keyword">return</span>;
+  }
+
+  filePaths.forEach(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(pathFile)</span> {</span>
+    <span class="hljs-keyword">var</span> idx = pathFile.lastIndexOf(path.sep);
+    <span class="hljs-keyword">var</span> fileNamePattern = <span class="hljs-literal">null</span>;
+    <span class="hljs-keyword">var</span> dir;
+
+    <span class="hljs-keyword">if</span> (idx + <span class="hljs-number">1</span> === pathFile.length) {
+      dir = path.normalize(basePath + pathFile);
+    } <span class="hljs-keyword">else</span> {
+      dir = path.normalize(basePath + pathFile.substring(<span class="hljs-number">0</span>, idx));
+      fileNamePattern = <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(pathFile.substring(idx + <span class="hljs-number">1</span>, pathFile.length));
+    }
+
+    nAsyncCalls++;
+
+    getFilesListInDirectory(dir, fileNamePattern, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(err, filesList)</span> {</span>
+      <span class="hljs-keyword">if</span> (nAsyncCalls &lt; <span class="hljs-number">0</span>) {
+        <span class="hljs-keyword">return</span>;
+      }
+      
+      <span class="hljs-keyword">if</span> (err) {
+        <span class="hljs-keyword">if</span> (ignoreErrNonExistingPaths &amp;&amp; <span class="hljs-regexp">/^ENOENT/</span>.test(err.message)) {
+          nAsyncCalls--;
+        } <span class="hljs-keyword">else</span> {
+          nAsyncCalls = -<span class="hljs-number">1</span>;
+          callback(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Error when getting the files list from '</span> + pathFile + <span class="hljs-string">'. Details: '</span> + err.message));
+          <span class="hljs-keyword">return</span>;
+        }
+      } <span class="hljs-keyword">else</span> {
+        nAsyncCalls--;
+        pushAll.apply(completeFilesList, filesList);
+      }
+
+      <span class="hljs-keyword">if</span> (<span class="hljs-number">0</span> === nAsyncCalls) {
+        callback(<span class="hljs-literal">null</span>, completeFilesList);
+      }
+    });
+  });
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getFilesListFromPatterns</span><span class="hljs-params">(pathsFileNamesPatterns, basePath, ignoreErrNonExistingPaths, callback)</span> {</span>
+  <span class="hljs-keyword">var</span> completeFilesList = [];
+  <span class="hljs-keyword">var</span> pushAll = completeFilesList.push;
+  <span class="hljs-keyword">var</span> nAsyncCalls = pathsFileNamesPatterns.length;
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-number">0</span> === nAsyncCalls) {
+    callback(<span class="hljs-literal">null</span>, completeFilesList);
+    <span class="hljs-keyword">return</span>;
+  }
+
+  pathsFileNamesPatterns.forEach(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(pathFileNamePattern)</span> {</span>
+    <span class="hljs-keyword">var</span> dir;
+    
+    <span class="hljs-keyword">if</span> (basePath) {
+      dir = path.normalize(basePath + path.sep + pathFileNamePattern.dir);
+    } <span class="hljs-keyword">else</span> {
+      dir = pathFileNamePattern.dir;
+    }
+
+    getFilesListInDirectory(dir, pathFileNamePattern.fileNamePattern, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(err, filesList)</span> {</span>
+      <span class="hljs-keyword">if</span> (nAsyncCalls &lt; <span class="hljs-number">0</span>) {
+        <span class="hljs-keyword">return</span>;
+      }
+
+      <span class="hljs-keyword">if</span> (err) {
+        <span class="hljs-keyword">if</span> (ignoreErrNonExistingPaths &amp;&amp; <span class="hljs-regexp">/^ENOENT/</span>.test(err.message)) {
+          nAsyncCalls--;
+        } <span class="hljs-keyword">else</span> {
+          nAsyncCalls = -<span class="hljs-number">1</span>;
+          callback(<span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Error when getting the busted files list from '</span> + dir + <span class="hljs-string">'. Details: '</span> + err.message));
+        }
+      } <span class="hljs-keyword">else</span> {
+        nAsyncCalls--;
+        pushAll.apply(completeFilesList, filesList);
+      }
+
+      <span class="hljs-keyword">if</span> (<span class="hljs-number">0</span> === nAsyncCalls) {
+        callback(<span class="hljs-literal">null</span>, completeFilesList);
+      }
+    });
+  });
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getFilesListInDirectory</span><span class="hljs-params">(dirPath, fileNamePattern, callback)</span> {</span>
+  dirPath = path.normalize(dirPath + path.sep);
+
+  fs.readdir(dirPath, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(err, filesList)</span> {</span>
+    <span class="hljs-keyword">var</span> nAsyncCalls; 
+    <span class="hljs-keyword">var</span> onlyFilesList = [];
+
+    <span class="hljs-keyword">if</span> (err) {
+      callback(err);
+      <span class="hljs-keyword">return</span>;
+    }
+    
+    nAsyncCalls = filesList.length;
+
+    filesList.forEach(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(fileName)</span> {</span>
+      <span class="hljs-keyword">if</span> ((<span class="hljs-literal">null</span> === fileNamePattern) || (fileNamePattern.test(fileName))) {
+        fs.lstat(dirPath + fileName, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(err, stats)</span> {</span>
+          <span class="hljs-keyword">if</span> (nAsyncCalls &lt; <span class="hljs-number">0</span>) {
+            <span class="hljs-keyword">return</span>;
+          }
+
+          <span class="hljs-keyword">if</span> (err) {
+            nAsyncCalls = -<span class="hljs-number">1</span>;
+            callback(err);
+            <span class="hljs-keyword">return</span>;
+          }
+
+          nAsyncCalls--;
+          
+          <span class="hljs-keyword">if</span> (stats.isFile()) {
+            onlyFilesList.push({
+              dir: dirPath, 
+              fileName: fileName
+            });
+          }
+
+          <span class="hljs-keyword">if</span> (<span class="hljs-number">0</span> === nAsyncCalls) {
+            callback(<span class="hljs-literal">null</span>, onlyFilesList);
+          }
+        });
+      } <span class="hljs-keyword">else</span> {
+        nAsyncCalls--;
+      }
+    });
+
+    <span class="hljs-keyword">if</span> (<span class="hljs-number">0</span> === nAsyncCalls) {
+      callback(<span class="hljs-literal">null</span>, onlyFilesList);
+      <span class="hljs-keyword">return</span>;
+    }
+  });
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getPathsFileNamePatterns</span><span class="hljs-params">(filePaths)</span> {</span>
+  <span class="hljs-keyword">var</span> pathFileNamePatterns = [];
+
+  filePaths.forEach(<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">(pathFile)</span> {</span>
+    <span class="hljs-keyword">var</span> idx = pathFile.lastIndexOf(path.sep);
+    <span class="hljs-keyword">var</span> fileNamePattern = <span class="hljs-literal">null</span>;
+    <span class="hljs-keyword">var</span> dir = pathFile.substr(<span class="hljs-number">0</span>, idx + <span class="hljs-number">1</span>);
+
+    <span class="hljs-keyword">if</span> (idx + <span class="hljs-number">1</span> &lt; pathFile.length) {
+      fileNamePattern = <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(pathFile.substring(idx + <span class="hljs-number">1</span>, pathFile.length));
+    }
+    
+    pathFileNamePatterns.push({
+      dir: dir,
+      fileNamePattern: fileNamePattern
+    });
+  });
+
+  <span class="hljs-keyword">return</span> pathFileNamePatterns;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">tearPathFileName</span><span class="hljs-params">(fullPathFileName)</span> {</span>
+  <span class="hljs-keyword">var</span> parts = {
+    path: path.dirname(fullPathFileName),
+    ext: path.extname(fullPathFileName)
+  };
+
+  <span class="hljs-keyword">if</span> ((<span class="hljs-string">'.'</span> === parts.path) &amp;&amp; (<span class="hljs-number">0</span> !== fullPathFileName[<span class="hljs-number">0</span>])) {
+    parts.path = <span class="hljs-string">''</span>;
+  }
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-string">''</span> === parts.ext) {
+    parts.name = path.basename(fullPathFileName);
+  } <span class="hljs-keyword">else</span> {
+    parts.name = path.basename(fullPathFileName);
+    parts.name = parts.name.substring(<span class="hljs-number">0</span>, parts.name.lastIndexOf(parts.ext));
+    parts.ext = parts.ext.substr(<span class="hljs-number">1</span>);
+  }
+
+  <span class="hljs-keyword">return</span> parts; 
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getFileNameWithSufix</span><span class="hljs-params">(fileName, sufix)</span> {</span>
+  <span class="hljs-keyword">var</span> fileNameParts = tearPathFileName(fileName);
+  <span class="hljs-keyword">var</span> newName;
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-string">''</span> === fileNameParts.path) {
+    newName =  fileNameParts.name +  sufix; 
+  } <span class="hljs-keyword">else</span> {
+    newName = fileNameParts.path + path.sep + fileNameParts.name +  sufix; 
+  }
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-string">''</span> !== fileNameParts.ext) {
+    newName += <span class="hljs-string">'.'</span> + fileNameParts.ext;
+  }
+
+  <span class="hljs-keyword">return</span> newName;
+}
+
+module.exports = {
+  getFilesList: getFilesList,
+  getFilesListFromPatterns: getFilesListFromPatterns,
+  getPathsFileNamePatterns: getPathsFileNamePatterns, 
+  getFilesListInDirectory: getFilesListInDirectory,
+  tearPathFileName: tearPathFileName,
+  getFileNameWithSufix: getFileNameWithSufix
+};</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
