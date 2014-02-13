@@ -24,7 +24,7 @@ Bear in mind the module doesn't provide any mechanism to change the views and/or
 The default configuration added to your mimosa configuration file when the module is installed is:
 
 ```
-assetsCacheBust:
+assetCacheBust:
   hash: 'md5'
   splitter: '-'
   files: []
@@ -46,7 +46,7 @@ Bear in mind that by default the `files` configuration property is an empty arra
 Here, you can see an example to set up module; the `files` property matches all the javascript files (files with 'js' extension) are in 'scripts' directory and all the files are in 'stylesheets' directory; remember that those directories are related to the directory compilation 'compileDir'. 
 
 ```
-assetsCacheBust:
+assetCacheBust:
   hash: 'sha1'
   splitter: '='
   files: ['script/.*\\.js', 'stylesheets/']
