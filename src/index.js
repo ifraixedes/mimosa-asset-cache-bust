@@ -1,12 +1,13 @@
 'use strict';
 
 var config = require('./config');
-var bustAssets = require('./bust-assets');
-
-var bustAllAssets = bustAssets.bustAllAssets;
-var cleanBustAssets = bustAssets.cleanBustAssets;
+var bustAssetsBootstrapper = require('./bust-assets');
 
 function registration(mimosaConfig, register) {
+  var bustAssets = bustAssetsBootstrapper(mimosaConfig);
+  var bustAllAssets = bustAssets.bustAllAssets;
+  var cleanBustAssets = bustAssets.cleanBustAssets;
+
   if (mimosaConfig.isOptimize) {
     register(['postBuild'], 'afterOptimize', function (mimosaConfig, worflowInfo, next) {
       bustAllAssets(mimosaConfig, next);
@@ -19,14 +20,14 @@ function registration(mimosaConfig, register) {
 }
 
 function registerCommand(program, retrieveConfig) {
-    program
-    .command('bust-assets')
-    .description('Renamed all the assets which match with the rules specified in the module configuration from the compiled directory')
-    .action(function() {
-      retrieveConfig(true, function(config) {
-        bustAllAssets(config);
-      }); 
+  program
+  .command('bust-assets')
+  .description('Renamed all the assets which match with the rules specified in the module configuration from the compiled directory')
+  .action(function() {
+    retrieveConfig(true, function(config) {
+      bustAssetsBootstrapper(config).bustAllAssets(config);
     }); 
+  }); 
 }
 
 module.exports = {
