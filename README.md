@@ -3,6 +3,10 @@ Mimosa Asset Cache Bust
 
 ## Overview
 
+Mimosa module for assets cache busting.
+
+The current relase is for Mimosa v 2.0, if you would to use it with a previous mimosa version then use the release [0.0.3](https://github.com/ifraixedes/mimosa-asset-cache-bust/tree/v0.0.3) of this module. 
+
 For more information regarding Mimosa, see http://mimosa.io
 
 ## Usage
