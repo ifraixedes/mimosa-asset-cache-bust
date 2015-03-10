@@ -1,11 +1,13 @@
-Mimosa Asset Cache Bust 
+Mimosa Asset Cache Bust
 ===========
+
+__WARNING I've stopped to maintain this modules, so I'm happy to move the ownership of this repository if somebody is interested in maintaining it, refer to [this issue](https://github.com/ifraixedes/mimosa-asset-cache-bust/issues/1)__
 
 ## Overview
 
 Mimosa module for assets cache busting.
 
-The current relase is for Mimosa v 2.0, if you would to use it with a previous mimosa version then use the release [0.0.3](https://github.com/ifraixedes/mimosa-asset-cache-bust/tree/v0.0.3) of this module. 
+The current release is for Mimosa v2.0, if you would to use it with a previous mimosa version then use the release [0.0.3](https://github.com/ifraixedes/mimosa-asset-cache-bust/tree/v0.0.3) of this module.
 
 For more information regarding Mimosa, see http://mimosa.io
 
@@ -62,6 +64,4 @@ The module renames the matched files appending to the original name (between the
 
 ## License
 
-The MIT License
-
-Copyright (c) 2014 Ivan Fraixedes Cugat <ifcdev@gmail.com>
+The MIT License, for more information read the [LICENSE file](LICENSE)
