@@ -7,13 +7,13 @@ var mimosaConfigId = packageJSON.config.mimosaConfigId;
 
 exports.defaults = function() {
   var configObj = {};
-  
+
   configObj[mimosaConfigId] = {
     hash: 'md5',
     splitter: '-',
     files: []
   };
- 
+
   return configObj;
 };
 
