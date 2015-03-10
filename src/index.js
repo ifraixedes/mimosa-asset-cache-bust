@@ -19,15 +19,18 @@ function registration(mimosaConfig, register) {
   });
 }
 
-function registerCommand(program, retrieveConfig) {
+function registerCommand(program, logger, retrieveConfig) {
   program
   .command('bust-assets')
   .description('Renamed all the assets which match with the rules specified in the module configuration from the compiled directory')
-  .action(function() {
-    retrieveConfig(true, function(config) {
+  .action(function(opts) {
+    retrieveConfig({
+      buildFirst: true,
+      mdebug: !!opts.mdebug
+    }, function(config) {
       bustAssetsBootstrapper(config).bustAllAssets(config);
-    }); 
-  }); 
+    });
+  });
 }
 
 module.exports = {
