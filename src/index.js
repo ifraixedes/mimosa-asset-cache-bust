@@ -25,8 +25,7 @@ function registerCommand(program, logger, retrieveConfig) {
   .description('Renamed all the assets which match with the rules specified in the module configuration from the compiled directory')
   .action(function(opts) {
     retrieveConfig({
-      buildFirst: true,
-      mdebug: !!opts.mdebug
+      buildFirst: true
     }, function(config) {
       bustAssetsBootstrapper(config).bustAllAssets(config);
     });
@@ -37,6 +36,5 @@ module.exports = {
   registration: registration,
   registerCommand: registerCommand,
   defaults: config.defaults,
-  placeholder: config.placeholder,
   validate: config.validate
 };
