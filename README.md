@@ -7,7 +7,9 @@ __WARNING I've stopped to maintain this modules, so I'm happy to move the owners
 
 Mimosa module for assets cache busting.
 
-The current release is for Mimosa v2.0, if you would to use it with a previous mimosa version then use the release [0.0.3](https://github.com/ifraixedes/mimosa-asset-cache-bust/tree/v0.0.3) of this module.
+The current release is for Mimosa v3.0, if you would to use it with a previous mimosa version then use for:
+- miomsa 2.0 release use [1.0.0](https://github.com/ifraixedes/mimosa-asset-cache-bust/tree/v1.0.0).
+- mimosa previous 2.0 release use [0.0.3](https://github.com/ifraixedes/mimosa-asset-cache-bust/tree/v0.0.3).
 
 For more information regarding Mimosa, see http://mimosa.io
 
