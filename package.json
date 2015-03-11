@@ -1,6 +1,6 @@
 {
   "name": "mimosa-asset-cache-bust",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "homepage": "https://github.com/ifraixedes/mimosa-asset-cache-bust/tree/v1.0.0",
   "author": "Ivan Fraixedes <ifcdev@gmail.com>",
   "description": "mimosa module to rename assets files appending a file digest providing a unique name, so breaking the browser cache, when they change",
@@ -19,8 +19,7 @@
     "cache bust",
     "asset"
   ],
-  "dependencies": {
-  },
+  "dependencies": {},
   "license": "MIT",
   "engines": {
     "node": ">=0.10"
